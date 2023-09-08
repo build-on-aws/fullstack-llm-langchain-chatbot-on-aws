@@ -1,0 +1,6 @@
+credentials:
+  username: xxxxx
+  password: xxxxx
+domain:
+  endpoint: https://xxxxxxx.us-east-1.es.amazonaws.com
+  index: carmanual
