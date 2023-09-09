@@ -16,7 +16,7 @@
       Default: 123456.dkr.ecr.us-east-1.amazonaws.com/web-chat-frontend:latest
     QUESTURL:
       Type: String
-      Description: Name of the ECR repository
+      Description: Name of the ECR repository , url should be of the format http://<DNS Name of API ALB>/qa
       Default: http://quest-Publi-123456-123456.us-east-1.elb.amazonaws.com/qa
   
   Resources:

@@ -17,19 +17,18 @@ logger = logging.getLogger('sagemaker')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
-
-TEXT_EMBEDDING_MODEL_ENDPOINT_NAME = 'jumpstart-dft-hf-textembedding-gpt-j-6b-fp16'
+TEXT_EMBEDDING_MODEL_ENDPOINT_NAME = os.environ.get('TEXT_EMBEDDING_MODEL_ENDPOINT_NAME')
 sagemaker_client = boto3.client('runtime.sagemaker')
 
 
 with open('configsoa.yml', 'r') as file:
     config = yaml.safe_load(file)
 
-es_username = config['credentials']['username']
-es_password = config['credentials']['password']
+es_username = os.environ.get('VECTOR_DB_USERNAME')
+es_password = os.environ.get('VECTOR_DB_PASSWORD')
 
-domain_endpoint = config['domain']['endpoint']
-domain_index = config['domain']['index']
+domain_endpoint = os.environ.get('VECTOR_DB_ENDPOINT')
+domain_index = os.environ.get('VECTOR_DB_INDEX')
 
 URL = f'{domain_endpoint}/{domain_index}'
 logger.info(f'URL for OpenSearch index = {URL}')

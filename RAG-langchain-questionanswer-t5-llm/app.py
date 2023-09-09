@@ -4,6 +4,7 @@ import requests
 import json
 import yaml
 import boto3
+import os
 from flask import Flask, request, jsonify
 from langchain.embeddings.sagemaker_endpoint import EmbeddingsContentHandler
 from langchain.llms.sagemaker_endpoint import LLMContentHandler, SagemakerEndpoint
@@ -33,10 +34,12 @@ def question_answering():
     # Get the question from the request
     question = request.json.get('question')
     logger.info(f'Question sent In :: {question}')
-
-    TEXT_EMBEDDING_MODEL_ENDPOINT_NAME = 'jumpstart-dft-hf-textembedding-gpt-j-6b-fp16'
+    
+    TEXT_EMBEDDING_MODEL_ENDPOINT_NAME = os.environ.get('TEXT_EMBEDDING_MODEL_ENDPOINT_NAME')
     # T5FLAN_XL_ENDPOINT_NAME = "jumpstart-example-huggingface-text2text-2023-08-05-07-33-26-290"
-    T5FLAN_XXL_ENDPOINT_NAME = "jumpstart-example-huggingface-text2text-2023-08-06-16-40-45-080" 
+    # T5FLAN_XXL_ENDPOINT_NAME = "jumpstart-example-huggingface-text2text-2023-08-06-16-40-45-080" 
+    T5FLAN_XXL_ENDPOINT_NAME = os.environ.get('T5FLAN_XXL_ENDPOINT_NAME')
+    
     
     class SMLLMContentHandler(LLMContentHandler):
         content_type = "application/json"
@@ -74,11 +77,11 @@ def question_answering():
     with open('configsoa.yml', 'r') as file:
         config = yaml.safe_load(file)
 
-    es_username = config['credentials']['username']
-    es_password = config['credentials']['password']
+    es_username = os.environ.get('VECTOR_DB_USERNAME')
+    es_password = os.environ.get('VECTOR_DB_PASSWORD')
     
-    domain_endpoint = config['domain']['endpoint']
-    domain_index = config['domain']['index']
+    domain_endpoint = os.environ.get('VECTOR_DB_ENDPOINT')
+    domain_index =  os.environ.get('VECTOR_DB_INDEX')
 
     
     URL = f'{domain_endpoint}/{domain_index}/_search'

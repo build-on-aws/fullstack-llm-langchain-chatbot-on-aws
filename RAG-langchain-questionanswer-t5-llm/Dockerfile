@@ -13,8 +13,6 @@ ENV AWS_DEFAULT_REGION=us-east-1
 # Update pip
 RUN pip install --upgrade pip
 
-# Copy the local files into the container
-
 
 # Install the required packages using pip
 RUN pip install boto3 langchain flask gunicorn

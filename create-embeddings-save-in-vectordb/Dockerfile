@@ -11,7 +11,6 @@ ENV AWS_DEFAULT_REGION=us-east-1
 RUN pip install --upgrade pip
 
 # Copy the local files into the container
-COPY ./configsoa.yml /app/configsoa.yml
 COPY ./startup_script.py /app/startup_script.py
 
 # Install the required packages using pip
