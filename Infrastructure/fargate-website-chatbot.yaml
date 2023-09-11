@@ -200,6 +200,7 @@
 
         
   Outputs:
-    PublicALBDns:
-      Description: Dns of the public ALB
-      Value:  !GetAtt PublicLoadBalancer.DNSName
+    WebsiteEndpoint:
+      Description: Use this url in the browser for the website with embedded chatbot powered by LLM
+      Value:
+        Fn::Sub: "http://${PublicLoadBalancer.DNSName}/"

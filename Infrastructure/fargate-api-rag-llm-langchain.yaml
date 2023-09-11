@@ -233,4 +233,4 @@
     PublicAPIEndpoint:
       Description: Dns of the public ALB
       Value:  
-        Fn::Sub: "https://${PublicLoadBalancer.DNSName}/qa"
+        Fn::Sub: "http://${PublicLoadBalancer.DNSName}/qa"
