@@ -74,9 +74,6 @@ def question_answering():
         content_handler=llm_content_handler,
     )
     
-    with open('configsoa.yml', 'r') as file:
-        config = yaml.safe_load(file)
-
     es_username = os.environ.get('VECTOR_DB_USERNAME')
     es_password = os.environ.get('VECTOR_DB_PASSWORD')
     
