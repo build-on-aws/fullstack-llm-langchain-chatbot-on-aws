@@ -18,23 +18,23 @@ Parameters:
     Type: String
     Description: Name of the ECR repository
     Default: 123456.dkr.ecr.us-east-1.amazonaws.com/save-embedding-vectordb:latest
-  TEXT_EMBEDDING_MODEL_ENDPOINT_NAME:
+  TextEmbeddingModelEndpointName:
     Type: String
     Description: Endpoint name of the Hugging Face embeddings model deployed on Sagemaker
     Default: jumpstart-dft-hf-textembedding-gpt-j-6b-fp16
-  VECTOR_DB_ENDPOINT:
+  VectorDatabaseEndpoint:
     Type: String
     Description: OpenSearch endpoint name which is the vector database
     Default: abcdef
-  VECTOR_DB_USERNAME:
+  VectorDatabaseUsername:
     Type: String
     Description: OpenSearch master username
     Default: master
-  VECTOR_DB_PASSWORD:
+  VectorDatabasePassword:
     Type: String
     Description: OpenSearch password
     Default: 12345abcd
-  VECTOR_DB_INDEX:
+  VectorDatabaseIndex:
     Type: String
     Description: OpenSearch index
     Default: carmanual
@@ -185,15 +185,15 @@ Resources:
             - Name: S3_KEY
               Value: ""
             - Name: TEXT_EMBEDDING_MODEL_ENDPOINT_NAME
-              Value: ""
+              Value: !Ref TextEmbeddingModelEndpointName
             - Name: VECTOR_DB_ENDPOINT
-              Value: ""
+              Value: !Ref VectorDatabaseEndpoint
             - Name: VECTOR_DB_USERNAME
-              Value: ""
+              Value: !Ref VectorDatabaseUsername
             - Name: VECTOR_DB_PASSWORD
-              Value: ""
+              Value: !Ref VectorDatabasePassword
             - Name: VECTOR_DB_INDEX
-              Value: ""
+              Value: !Ref VectorDatabaseIndex
           LogConfiguration:
             LogDriver: awslogs
             Options:

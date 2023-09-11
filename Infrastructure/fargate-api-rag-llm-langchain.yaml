@@ -14,27 +14,27 @@
       Type: String
       Description: Name of the ECR repository
       Default: 123456.dkr.ecr.us-east-1.amazonaws.com/qa-container:latest
-    TEXT_EMBEDDING_MODEL_ENDPOINT_NAME:
+    TextEmbeddingModelEndpointName:
       Type: String
       Description: Endpoint name of the Hugging Face embeddings model deployed on Sagemaker
       Default: jumpstart-dft-hf-textembedding-gpt-j-6b-fp16
-    T5FLAN_XXL_ENDPOINT_NAME:
+    T5FlanXXLEndpointName:
       Type: String
       Description: Endpoint name of the T5-FLAN endpoint deployed on sagemaker
       Default: jumpstart-example-huggingface-text2text-2023-08-06-16-40-45-080
-    VECTOR_DB_ENDPOINT:
+    VectorDatabaseEndpoint:
       Type: String
       Description: OpenSearch endpoint name which is the vector database
       Default: abcdef
-    VECTOR_DB_USERNAME:
+    VectorDatabaseUsername:
       Type: String
       Description: OpenSearch master username
       Default: master
-    VECTOR_DB_PASSWORD:
+    VectorDatabasePassword:
       Type: String
       Description: OpenSearch password
       Default: 12345abcd
-    VECTOR_DB_INDEX:
+    VectorDatabaseIndex:
       Type: String
       Description: OpenSearch index
       Default: carmanual
@@ -157,16 +157,17 @@
             Image: !Ref Imagename
             Environment:
               - Name: TEXT_EMBEDDING_MODEL_ENDPOINT_NAME
-                Value: ""
+                Value: !Ref TextEmbeddingModelEndpointName
               - Name: T5FLAN_XXL_ENDPOINT_NAME
-                Value: ""
+                Value: !Ref T5FlanXXLEndpointName
               - Name: VECTOR_DB_ENDPOINT
-                Value: ""
+                Value: !Ref VectorDatabaseEndpoint
               - Name: VECTOR_DB_USERNAME
-                Value: ""
+                Value: !Ref VectorDatabaseUsername
               - Name: VECTOR_DB_PASSWORD
-                Value: ""
+                Value: !Ref VectorDatabasePassword
               - Name: VECTOR_DB_INDEX
+                Value: !Ref VectorDatabaseIndex              
             PortMappings:
               - ContainerPort: 80
             LogConfiguration:
@@ -229,6 +230,7 @@
 
         
   Outputs:
-    PublicALBDns:
+    PublicAPIEndpoint:
       Description: Dns of the public ALB
-      Value:  !GetAtt PublicLoadBalancer.DNSName
+      Value:  
+        Fn::Sub: "https://${PublicLoadBalancer.DNSName}/qa"
