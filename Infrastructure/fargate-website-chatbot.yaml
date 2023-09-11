@@ -125,8 +125,8 @@
     EcsFrontTaskDefinition:
       Type: AWS::ECS::TaskDefinition
       Properties:
-        Cpu: 512
-        Memory: 1024
+        Cpu: 1024
+        Memory: 2048
         NetworkMode: awsvpc
         ExecutionRoleArn: !GetAtt ECSRole.Arn
         TaskRoleArn: !GetAtt ECSRole.Arn      # ARN of the Task Role
@@ -172,16 +172,16 @@
     EcsServiceTargetGroup:
       Type: AWS::ElasticLoadBalancingV2::TargetGroup
       Properties:
-        HealthCheckIntervalSeconds: 6
+        HealthCheckIntervalSeconds: 30
         HealthCheckPath: /
         HealthCheckProtocol: HTTP
-        HealthCheckTimeoutSeconds: 5
+        HealthCheckTimeoutSeconds: 20
         HealthyThresholdCount: 2
         TargetType: ip
         Name: 'ecs-website-service'
         Port: 80
         Protocol: HTTP
-        UnhealthyThresholdCount: 2
+        UnhealthyThresholdCount: 5
         VpcId: !Ref DemoVPC
 
   # Create a rule on the load balancer for routing traffic to the target group
