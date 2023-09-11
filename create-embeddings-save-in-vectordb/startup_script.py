@@ -20,10 +20,6 @@ logger.addHandler(logging.StreamHandler())
 TEXT_EMBEDDING_MODEL_ENDPOINT_NAME = os.environ.get('TEXT_EMBEDDING_MODEL_ENDPOINT_NAME')
 sagemaker_client = boto3.client('runtime.sagemaker')
 
-
-with open('configsoa.yml', 'r') as file:
-    config = yaml.safe_load(file)
-
 es_username = os.environ.get('VECTOR_DB_USERNAME')
 es_password = os.environ.get('VECTOR_DB_PASSWORD')
 
