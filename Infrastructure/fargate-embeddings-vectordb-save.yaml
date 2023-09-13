@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation Template for S3 Event and Fargate Task
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Name of the S3 bucket
+    Default: car-manuals-12345 # Replace with actual VPC ID
+  VpcId:
+    Type: String
+    Description: ID of the VPC
+    Default: vpc-123456  # Replace with actual VPC ID
+  SubnetId:
+    Type: String
+    Description: ID of the subnet
+    Default: subnet-123456 , subnet-123456  # Replace with actual subnet IDs
+  Imagename:
+    Type: String
+    Description: Name of the ECR repository
+    Default: 123456.dkr.ecr.us-east-1.amazonaws.com/save-embedding-vectordb:latest
+  TextEmbeddingModelEndpointName:
+    Type: String
+    Description: Endpoint name of the Hugging Face embeddings model deployed on Sagemaker
+    Default: jumpstart-dft-hf-textembedding-gpt-j-6b-fp16
+  VectorDatabaseEndpoint:
+    Type: String
+    Description: OpenSearch endpoint name which is the vector database
+    Default: abcdef
+  VectorDatabaseUsername:
+    Type: String
+    Description: OpenSearch master username
+    Default: master
+  VectorDatabasePassword:
+    Type: String
+    Description: OpenSearch password
+    Default: 12345abcd
+  VectorDatabaseIndex:
+    Type: String
+    Description: OpenSearch index
+    Default: carmanual
+
+
+Resources:
+  MyLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/ecs-embeddings-vector # Replace with your desired log group name
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Timeout: 900  # Set the Lambda function timeout to 15 minutes (900 seconds)
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          SubnetId: !Ref SubnetId  # Set the SubnetId environment variable
+          FargateTaskDefinition: !Ref FargateTaskDefinition
+          ECSClusterName: !Ref ECSCluster  # Reference the ECS cluster created earlier
+          LaunchType: FARGATE
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const ecs = new AWS.ECS();
+
+          exports.handler = async (event) => {
+            const bucket = event.Records[0].s3.bucket.name;
+            const key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
+
+            // Access the SubnetId environment variable
+            const subnetIdString = process.env.SubnetId;
+            const subnetIdArray = subnetIdString.split(',').map(subnetId => subnetId.trim());
+            const FargateTaskDefinition =  process.env.FargateTaskDefinition;
+            const ECSClusterName = process.env.ECSClusterName;
+            const LaunchType = process.env.LaunchType;
+
+            // Call Fargate task here passing bucket and key as environment variables
+            const params = {
+              count: 1,
+              platformVersion:'LATEST',
+              taskDefinition: FargateTaskDefinition,
+              networkConfiguration: {
+                awsvpcConfiguration: {
+                  subnets: subnetIdArray,
+                  assignPublicIp: 'ENABLED'
+                }
+              },
+              cluster: ECSClusterName,
+              launchType: LaunchType,
+              overrides: {
+                containerOverrides: [
+                  {
+                    name: 'save-embedding-vectordb',
+                    environment: [
+                      {name: 'S3_BUCKET', value: bucket},
+                      {name: 'S3_KEY', value: key}
+                    ]
+                  }
+                ]
+              }
+            };
+            await ecs.runTask(params).promise();
+          };
+
+      Runtime: nodejs14.x
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:DeleteObject
+                Resource: '*'
+              - Effect: Allow
+                Action: iam:PassRole  # Add this statement to allow passing roles
+                Resource: !GetAtt FargateTaskExecutionRole.Arn  # Specify the ARN of the Fargate task execution role
+              - Effect: Allow
+                Action: ecs:*
+                Resource: '*' # Specify the ARN of the ECS task definition
+
+  MyS3Bucket:
+    Type: AWS::S3::Bucket
+    DependsOn:
+      - S3EventPermission
+    Properties:
+      BucketName: !Ref BucketName
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt LambdaFunction.Arn
+
+
+  S3EventPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub 'arn:aws:s3:::${BucketName}'
+        # Fn::Sub: arn:aws:s3:::${MyS3Bucket} # Use Fn::Sub to substitute the bucket name
+
+
+
+  FargateTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: FargateTask
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt FargateTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt FargateTaskExecutionRole.Arn      # ARN of the Task Role
+      Cpu: '1024'
+      Memory: '2048'
+      ContainerDefinitions:
+        - Name: save-embedding-vectordb
+          Image: !Ref Imagename
+          Essential: true
+          Environment:
+            - Name: S3_BUCKET
+              Value: ""
+            - Name: S3_KEY
+              Value: ""
+            - Name: TEXT_EMBEDDING_MODEL_ENDPOINT_NAME
+              Value: !Ref TextEmbeddingModelEndpointName
+            - Name: VECTOR_DB_ENDPOINT
+              Value: !Ref VectorDatabaseEndpoint
+            - Name: VECTOR_DB_USERNAME
+              Value: !Ref VectorDatabaseUsername
+            - Name: VECTOR_DB_PASSWORD
+              Value: !Ref VectorDatabasePassword
+            - Name: VECTOR_DB_INDEX
+              Value: !Ref VectorDatabaseIndex
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref MyLogGroup # Reference the CloudWatch Log Group created in step 1
+              awslogs-stream-prefix: ecs # Replace with your desired log stream prefix
+              awslogs-region: us-east-1 # Specify your desired AWS region here
+
+  FargateTaskExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonESFullAccess  # Add Amazon ES full access policy
+        - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess  # Add Amazon SageMaker full access policy
+      Policies:
+        - PolicyName: ecs-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - "ecr:GetAuthorizationToken"
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: '*'
+        - PolicyName: FargateTaskExecutionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:*
+                Resource: '*'

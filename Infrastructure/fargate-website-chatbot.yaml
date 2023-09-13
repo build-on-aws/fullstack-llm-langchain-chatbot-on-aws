@@ -1,0 +1,206 @@
+  AWSTemplateFormatVersion: 2010-09-09
+  Description: Custom VPC Creation With Private and Public Subnet
+
+  Parameters:
+    DemoVPC:
+      Type: String
+      Default: vpc-123456  # Replace with actual VPC ID
+      Description: The VPC that the service is running inside of
+    PublicSubnetIds:
+      Type: List<AWS::EC2::Subnet::Id>
+      Default: subnet-123456 , subnet-123456  # Replace with actual subnet IDs
+      Description: List of public subnet IDs to put the load balancer and tasks in
+    Imagename:
+      Type: String
+      Description: Name of the ECR repository
+      Default: 123456.dkr.ecr.us-east-1.amazonaws.com/web-chat-frontend:latest
+    QUESTURL:
+      Type: String
+      Description: Name of the ECR repository , url should be of the format http://<DNS Name of API ALB>/qa
+      Default: http://quest-Publi-123456-123456.us-east-1.elb.amazonaws.com/qa
+  
+  Resources:
+    LogGroup:
+      Type: AWS::Logs::LogGroup
+
+    PublicLoadBalancerSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+          GroupDescription: Access to the public facing load balancer
+          VpcId: !Ref DemoVPC
+          SecurityGroupIngress:
+            # Allow access to ALB from anywhere on the internet
+            - CidrIp: 0.0.0.0/0
+              IpProtocol: -1
+
+    PublicLoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+        Scheme: internet-facing
+        Subnets: !Ref PublicSubnetIds
+        SecurityGroups:
+          - !Ref 'PublicLoadBalancerSecurityGroup'
+         
+    DummyTargetGroupPublic:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+        HealthCheckIntervalSeconds: 6
+        HealthCheckPath: /
+        HealthCheckProtocol: HTTP
+        HealthCheckTimeoutSeconds: 5
+        HealthyThresholdCount: 2
+        Name: "frontend-op"
+        Port: 80
+        Protocol: HTTP
+        UnhealthyThresholdCount: 2
+        VpcId: !Ref DemoVPC
+
+    PublicLoadBalancerListener:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        DefaultActions:
+          - TargetGroupArn: !Ref 'DummyTargetGroupPublic'
+            Type: 'forward'
+        LoadBalancerArn: !Ref 'PublicLoadBalancer'
+        Port: 80
+        Protocol: HTTP
+
+    ECSRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - ecs-tasks.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+          - arn:aws:iam::aws:policy/AmazonESFullAccess  # Add Amazon ES full access policy
+          - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess  # Add Amazon SageMaker full access policy
+        Policies:
+          - PolicyName: ecs-policy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: 
+                    - "ecr:GetAuthorizationToken"
+                    - "ecr:BatchCheckLayerAvailability"
+                    - "ecr:GetDownloadUrlForLayer"
+                    - "ecr:BatchGetImage"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource: '*'
+
+    ECSCluster:
+      Type: AWS::ECS::Cluster
+
+    ECSSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Access to the public ECS containers
+        VpcId: !Ref DemoVPC
+
+
+    ECSSecurityGroupIngressFromPublicALB:
+      Type: AWS::EC2::SecurityGroupIngress
+      Properties:
+        Description: Ingress from the public ALB
+        GroupId: !Ref 'ECSSecurityGroup'
+        IpProtocol: -1
+        SourceSecurityGroupId: !Ref 'PublicLoadBalancerSecurityGroup'
+
+    ECSSecurityGroupIngressFromSelfPublic:
+      Type: AWS::EC2::SecurityGroupIngress
+      Properties:
+        Description: Ingress from other containers in the same security group
+        GroupId: !Ref 'ECSSecurityGroup'
+        IpProtocol: -1
+        SourceSecurityGroupId: !Ref 'ECSSecurityGroup'
+
+    EcsFrontTaskDefinition:
+      Type: AWS::ECS::TaskDefinition
+      Properties:
+        Cpu: 1024
+        Memory: 2048
+        NetworkMode: awsvpc
+        ExecutionRoleArn: !GetAtt ECSRole.Arn
+        TaskRoleArn: !GetAtt ECSRole.Arn      # ARN of the Task Role
+        RequiresCompatibilities:
+          - FARGATE
+        ContainerDefinitions:
+          - Name: "web-chat-frontend"
+            Image: !Ref Imagename
+            Environment:
+              - Name: QUEST_URL
+                Value: !Ref QUESTURL
+            PortMappings:
+              - ContainerPort: 3000
+            LogConfiguration:
+              LogDriver: 'awslogs'
+              Options:
+                awslogs-group: !Ref LogGroup
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: 'web-chat-frontend'
+
+    EcsFrontService:
+      Type: AWS::ECS::Service
+      DependsOn: LoadBalancerRule
+      Properties:
+        Cluster: !Ref ECSCluster
+        LaunchType: FARGATE
+        DeploymentConfiguration:
+          MaximumPercent: 200
+          MinimumHealthyPercent: 100
+        DesiredCount: 2
+        NetworkConfiguration:
+          AwsvpcConfiguration:
+            AssignPublicIp: ENABLED
+            SecurityGroups:
+              - !Ref ECSSecurityGroup
+            Subnets: !Ref PublicSubnetIds  # Use the provided public subnet IDs here
+        TaskDefinition: !Ref EcsFrontTaskDefinition
+        LoadBalancers:
+          - ContainerName: "web-chat-frontend"
+            ContainerPort: 3000
+            TargetGroupArn: !Ref 'EcsServiceTargetGroup'
+
+    EcsServiceTargetGroup:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+        HealthCheckIntervalSeconds: 30
+        HealthCheckPath: /
+        HealthCheckProtocol: HTTP
+        HealthCheckTimeoutSeconds: 20
+        HealthyThresholdCount: 2
+        TargetType: ip
+        Name: 'ecs-website-service'
+        Port: 80
+        Protocol: HTTP
+        UnhealthyThresholdCount: 5
+        VpcId: !Ref DemoVPC
+
+  # Create a rule on the load balancer for routing traffic to the target group
+    LoadBalancerRule:
+      Type: AWS::ElasticLoadBalancingV2::ListenerRule
+      Properties:
+        Actions:
+          - TargetGroupArn: !Ref 'EcsServiceTargetGroup'
+            Type: 'forward'
+        Conditions:
+          - Field: path-pattern
+            Values: 
+              - '*'
+        ListenerArn: !Ref PublicLoadBalancerListener
+        Priority: 1
+
+        
+  Outputs:
+    WebsiteEndpoint:
+      Description: Use this url in the browser for the website with embedded chatbot powered by LLM
+      Value:
+        Fn::Sub: "http://${PublicLoadBalancer.DNSName}/"

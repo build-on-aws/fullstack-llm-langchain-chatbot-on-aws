@@ -1,0 +1,259 @@
+<html>
+<head>
+  <title>RetroJoy Cars</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.10/handlebars.min.js"></script>
+  <script src="https://cdn.rawgit.com/showdownjs/showdown/1.7.4/dist/showdown.min.js"></script>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* add your styles here */
+    body {
+      background-color: #f9d875; /* Fun yellow background color */
+      font-family: Arial, sans-serif;
+    }
+    .wrapper {
+      background-color: #ffffff; /* White background */
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+    #message_list {
+      overflow-y: auto;
+      height: 300px;
+      padding-right: 5px;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      position: relative;
+    }
+    .message.user {
+      background-color: #f3f3f3;
+      color: #333;
+      text-align: right;
+    }
+    .message.bot {
+      background-color: #007bff;
+      color: #fff;
+      text-align: left;
+    }
+    .message .typing-indicator {
+      display: inline-block;
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      width: 20px;
+      height: 20px;
+    }
+    .message .typing-indicator span {
+      display: block;
+      width: 4px;
+      height: 4px;
+      margin: 2px;
+      border-radius: 50%;
+      background-color: #fff;
+      opacity: 0.4;
+      animation: typing 1s infinite;
+    }
+    .message .typing-indicator span:nth-child(1) {
+      animation-delay: 0s;
+    }
+    .message .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .message .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes typing {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.5);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    input[type="text"] {
+      border: none;
+      border-radius: 3px;
+      padding: 10px;
+      width: 100%;
+    }
+    button[type="submit"] {
+      background-color: #007bff;
+      border: none;
+      border-radius: 3px;
+      color: #fff;
+      cursor: pointer;
+      margin-left: 10px;
+      padding: 10px;
+    }
+    button[type="submit"]:hover {
+      background-color: #0069d9;
+    }
+
+    .hero-carousel {
+      position: relative;
+      width: 100%;
+      height: 400px;
+      overflow: hidden;
+    }
+
+    .hero-item {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .hero-item:first-child {
+      opacity: 1;
+    }
+
+    .container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .hero-item h2 {
+      font-size: 36px;
+      color: #e74c3c; /* Retro red color */
+      margin-bottom: 20px;
+    }
+
+    .hero-item h3 {
+      font-size: 24px;
+      color: #3498db; /* Retro blue color */
+      margin-bottom: 10px;
+    }
+
+    .hero-item p {
+      font-size: 18px;
+      color: #2ecc71; /* Retro green color */
+      margin-bottom: 20px;
+    }
+
+    .hero-item ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .hero-item li {
+      font-size: 18px;
+      color: #f39c12; /* Retro yellow color */
+      margin-bottom: 10px;
+    }
+
+    .hero-item:nth-child(2n) {
+      background-color: #1c2331; /* Dark background */
+    }
+
+    .hero-item:nth-child(2n-1) {
+      background-color: #47525d; /* Slightly lighter background */
+    }
+
+    .hero-carousel:hover .hero-item {
+      opacity: 0.8;
+    }
+
+    .hero-carousel:hover .hero-item:hover {
+      opacity: 1;
+    }
+
+    /* Add more retro styling here */
+
+  </style>
+</head>
+
+<body>
+  <div class="hero-carousel">
+    <div class="hero-item">
+      <div class="container">
+        <h2>RetroJoy Cars</h2>
+        <p>Experience the whimsical and joyful world of RetroJoy Cars, where driving is pure delight.</p>
+
+        <h3>The Fun-Filled Driving Adventure</h3>
+        <p>Discover the excitement of driving a RetroJoy car with its quirky design and playful spirit.</p>
+      </div>
+    </div>
+
+    <div class="hero-item">
+      <div class="container">
+        <h3>RetroJoy AI Integration</h3>
+        <p>Explore how RetroJoy seamlessly integrates AI-powered chatbots into your driving experience.</p>
+        <ul>
+          <li>Get real-time quirky assistance and information</li>
+          <li>Personalize your whimsical driving experience</li>
+          <li>Interact with your car using fun and playful language</li>
+        </ul>
+
+        <h3>Experience RetroJoy Like Never Before</h3>
+        <p>Discover the future of fun driving with AI-powered interactions. Contact us to learn more about our quirky car collection.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrapper" style="position: fixed; bottom: 0; right: 0;">
+
+    <div id="message_window">
+      <div class="disconnected">
+        Disconnected... reconnecting to the RetroJoy CarSavvy Assistant!
+      </div>
+      <div class="offline">
+        Offline! Reload to reconnect.
+      </div>
+      <section>
+        <div id="message_list">
+          <div id="message_template">
+            <div class="message {{message.type}}">
+              {{#if message.isTyping}}
+              <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              {{/if}}
+              {{{message.html}}}
+
+              {{#if message.open_link}}
+              <a href="{{{message.open_link}}}" target="_blank" class="button_message">{{#if message.link_title}}{{message.link_title}}{{else}}{{message.open_link}}{{/if}}</a>
+              {{/if}}
+            </div>
+            {{#message.files}}
+            <div class="file_attachment">
+              {{#if image}}
+              <img src="{{{url}}}" alt="{{{url}}}" />
+              {{else}}
+              <a href="{{{url}}}" title="{{{url}}}">{{{url}}}</a>
+              {{/if}}
+            </div>
+            {{/message.files}}
+          </div>
+        </div>
+      </section>
+      <div id="message_replies">
+      </div>
+      <footer>
+        <form onsubmit="Botkit.send(Botkit.input.value, event)">
+          <input type="text" autocomplete="off" id="messenger_input" placeholder="Type here..." />
+          <button type="submit">Send</button>
+        </form>
+      </footer>
+    </div>
+  </div>
+  <script src="/client.js"></script>
+</body>
+</html>
