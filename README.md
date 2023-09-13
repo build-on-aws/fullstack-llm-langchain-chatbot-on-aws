@@ -9,8 +9,6 @@ Sample code repo that forms the base of the following tutorial:
         * We are using AWS OpenSearch as a Vector Database for storing the embeddings.
         * startup_script.py contains the code that will invoke the hugging face embeddings model endpoint that is deployed on sagemaker for the car manual document and will insert the emebeddings into the Vector Database.
         * After using the Dockerfile for building the container upload the image into the AWS Elastic container Registry (ECR) in your AWS Account.
-    * data/ folder
-        * Contains the car_manual.pdf which is the data for our tutorial. Our car savvy AI asssistant will use this as the information source for answering questions asked to it in Natural Language.
     * RAG-langchain-questionanswer-t5-llm/ folder 
         * This folder has the code for building the API endpoint which will respond back to the car related questions sent to it. 
         * This API serves as the backend intelligence to our car savvy AI Assistant and invokes the deployed T5-Flan LLM endpoint.
