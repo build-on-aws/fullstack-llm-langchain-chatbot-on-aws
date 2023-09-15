@@ -1,7 +1,7 @@
 ## Full Stack LLM Powered Question and Answer Chatbot.
 
 Sample code repo that forms the base of the following tutorial:
-* [Unlock the power of Unstructured Data: From Embeddings to In Context Learning – Build a Full stack Q&A Chatbot with Langchain, and LLM Models on Sagemaker](https://buildon.aws/tutorials/fullstack-llm-langchain-chatbot-on-aws)
+* [Unlock the power of Unstructured Data: From Embeddings to In Context Learning – Build a Full stack Q&A Chatbot with Langchain, and LLM Models on Sagemaker](https://community.aws/tutorials/fullstack-llm-langchain-chatbot-on-aws)
 * Detailed setup and steps are provided in the tutorial.
 * Explanation of the folders that you see in this repo
     * create-embeddings-save-in-vectordb/ folder
