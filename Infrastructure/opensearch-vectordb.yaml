@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create an Amazon OpenSearch cluster with public access.
+
+Parameters:
+  ClusterName:
+    Type: String
+    Description: Name for the OpenSearch cluster
+  MasterUserName:
+    Type: String
+    Description: Master username for the OpenSearch cluster
+  MasterUserPassword:
+    Type: String
+    Description: Password for the master user
+
+Resources:
+  OpenSearchDomain:
+    Type: AWS::OpenSearchService::Domain
+    Properties:
+      DomainName: !Ref ClusterName
+      EngineVersion: "Elasticsearch_7.10"
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      EncryptionAtRestOptions:
+        Enabled: true  # Enable encryption at rest
+      AdvancedSecurityOptions:
+        Enabled: true
+        InternalUserDatabaseEnabled: true
+        MasterUserOptions:
+          MasterUserName: !Ref MasterUserName
+          MasterUserPassword: !Ref MasterUserPassword
+      AccessPolicies: 
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              AWS: "*"
+            Action: "es:*"
+            Resource: !Sub "arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${ClusterName}/*"
+      ClusterConfig:
+        InstanceCount: 3
+        InstanceType: "r6g.large.search"
+      EBSOptions:
+        EBSEnabled: true
+        VolumeType: "gp3"
+        VolumeSize: 100
+        Iops: 3000
+        Throughput: 125
+      DomainEndpointOptions:
+        EnforceHTTPS: true  # Enable HTTPS
+
+Outputs:
+  OpenSearchEndpoint:
+    Description: OpenSearch endpoint URL
+    Value: !GetAtt OpenSearchDomain.DomainEndpoint

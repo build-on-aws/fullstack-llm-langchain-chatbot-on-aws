@@ -17,7 +17,8 @@ Sample code repo that forms the base of the following tutorial:
         * Code for Website and chatbot along with Dockerfile 
         * Build the Dockerfile in this folder and push the image to AWS Elastic Container Registry (ECR).
     * Infrastructure
-        * After the 3 docker container images from  create-embeddings-save-in-vectordb/ , RAG-langchain-questionanswer-t5-llm/ and homegrown-website-and-bot/  are pushed to ECR , use the Cloudformation templates in this folder.
+        * Create the Cloudformation stack (opensearch-vectordb.yaml) to build the Amazon OpenSearch Cluster.   
+        * After the 3 docker container images from  create-embeddings-save-in-vectordb/ , RAG-langchain-questionanswer-t5-llm/ and homegrown-website-and-bot/  are pushed to Amazon ECR , use the 3 Cloudformation templates mentioned below from this folder.
         * Create the Cloudformation stack (fargate-embeddings-vectordb-save.yaml) to build the Fargate task that will create embeddings and store into the vector database.
         * Create the Cloudformation stack (fargate-api-rag-llm-langchain.yaml) to build the the ECS cluster for the API.
         * Create the Cloudformation stack (fargate-website-chatbot.yaml) to build the the ECS cluster for the website with embedded chatbot.
